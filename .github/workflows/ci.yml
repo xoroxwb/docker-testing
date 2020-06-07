@@ -1,0 +1,81 @@
+name: ci
+
+on:
+  push:
+    branches: master
+
+env:
+  DOCKERORG: ${{ secrets.DOCKER_USER }}
+  IMAGENAME: 'testing'
+  PLATFORMS: 'linux/amd64,linux/arm64/v8,linux/arm/v7'
+
+jobs:
+  BuildX:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: SetupX
+        run: |
+          docker pull -q multiarch/qemu-user-static
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
+          docker buildx create \
+            --name builder-${GITHUB_SHA} \
+            --driver docker-container \
+            --use
+          docker buildx inspect --bootstrap
+      
+      - name: CacheX
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: /tmp/.buildx-cache
+          key: buildx-${{ github.sha }}
+          restore-keys: buildx-
+
+      - name: BuildX
+        run: |
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --cache-to "type=local,dest=/tmp/.buildx-cache" \
+            --progress plain \
+            --platform ${PLATFORMS} \
+            --output "type=image,push=false" \
+            --tag ${IMAGENAME}-multiarch:${GITHUB_SHA::7} \
+            --file ${IMAGENAME}/Dockerfile \
+            ${IMAGENAME}
+
+      - name: TestX
+        run: |
+          testX() {
+            local PLATFORM="$1"
+            local ARCHTYPE="$(echo ${PLATFORM#*linux/} | tr -d '/')"
+            docker buildx build \
+              --progress plain \
+              --platform $PLATFORM \
+              --load \
+              --tag ${IMAGENAME}-${ARCHTYPE}:${GITHUB_SHA::7} \
+              --file ./${IMAGENAME}/Dockerfile \
+            ./${IMAGENAME}
+            docker run ${IMAGENAME}-${ARCHTYPE}:${GITHUB_SHA::7}
+          }
+          export -f testX
+          echo "$PLATFORMS" | parallel -d , -j0 --trim lr -k --linebuffer testX {}
+
+      - name: DeployX
+        if: success() && github.event_name != 'pull_request'
+        run: |
+          echo ${{ secrets.DOCKER_PASS }} | docker login -u ${DOCKERORG} --password-stdin
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --progress plain \
+            --platform ${PLATFORMS} \
+            --output "type=image,push=true" \
+            --tag ${DOCKERORG}/${IMAGENAME}:dev \
+            --file ./${IMAGENAME}/Dockerfile \
+            ./${IMAGENAME}
+
+      - name: ClearX
+        if: always()
+        run: rm -f ${HOME}/.docker/config.json
