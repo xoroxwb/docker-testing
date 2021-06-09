@@ -1,0 +1,8 @@
+#https://blog.ruanbekker.com/blog/2021/03/09/cicd-with-droneci-and-gitea-using-docker-compose/
+version: '3.6'
+
+services:
+  test:
+    container_name: test
+    image: alpine
+    command: cat /etc/os-release
