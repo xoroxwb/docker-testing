@@ -7,7 +7,7 @@ steps:
   - name: Build image
     image: alpine
     commands:
-      - cat /etc/os-release
+      - apk add --no-cache alpine-conf alpine-sdk aports-build
 
 trigger:
   branch:
