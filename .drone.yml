@@ -5,23 +5,8 @@ name: Build
 
 steps:
   - name: Build image
-<<<<<<< HEAD
     commands:
       - cat /etc/os-release
-=======
-    image: alpine
-    commands:
-      - cat /etc/os-release
-    #volumes:
-    #  - name: docker_sock
-    #    path: /var/run/docker.sock
-
-
-#volumes:
-#  - name: docker_sock
-#    host:
-#      path: /var/run/docker.sock
->>>>>>> 3552ae80999e086f3c6ec74a5e04bdf689df97da
 
 trigger:
   target:
