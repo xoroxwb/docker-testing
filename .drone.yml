@@ -19,7 +19,7 @@ volumes:
 
 trigger:
   target:
-  - production
+    - production
   branch:
     - docker-compose
   event:
