@@ -19,10 +19,9 @@ volumes:
 
 trigger:
   target:
-    include:
-      - staging
-      - production
+  - production
   branch:
     - docker-compose
   event:
     - push
+    - promote
