@@ -1,13 +1,48 @@
 ---
 kind: pipeline
 type: docker
-name: Build
+name: arm
+
+clone:
+  disable: true
+
+platform:
+  os: linux
+  arch: arm64
 
 steps:
-  - name: Build image
-    image: alpine
-    commands:
-      - 'apk add --no-cache alpine-conf alpine-sdk aports-build'
+  - name: build
+    pull: always
+    image: xoroxwb/abuildrepo:latest
+    environment:
+      PRIVKEY:
+        from_secret: PRIVKEY
+
+trigger:
+  branch:
+    - docker-compose
+  event:
+    - push
+
+---
+kind: pipeline
+type: docker
+name: amd
+
+clone:
+  disable: true
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: build
+    pull: always
+    image: xoroxwb/abuildrepo:latest
+    environment:
+      PRIVKEY:
+        from_secret: PRIVKEY
 
 trigger:
   branch:

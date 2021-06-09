@@ -1,0 +1,54 @@
+--- a/Makefile.PL
++++ b/Makefile.PL
+@@ -219,9 +219,12 @@
+ 	push @CC_LIBS, '-lsqlite3';
+ }
+ 
++push @CC_LIBS, '-L/usr/share/lms/dev/lib -licudata_s -licui18n_s -licuuc_s -lstdc++';
++
+ my @CC_INC = (
+ 	'-I.',
+ 	'-I$(DBI_INSTARCH_DIR)',
++	'-I/usr/share/lms/dev/include',
+ );
+ if ( $sqlite_inc ) {
+ 	push @CC_INC, "-I$sqlite_inc";
+@@ -230,12 +233,13 @@
+ my @CC_DEFINE = (
+ 	'-DSQLITE_ENABLE_FTS4',             # for sqlite >= 3.7.4
+ 	'-DSQLITE_ENABLE_FTS3_PARENTHESIS', # for sqlite >= 3.6.10
+-	'-DSQLITE_ENABLE_RTREE',            # for sqlite >= 3.6.10
++#	'-DSQLITE_ENABLE_RTREE',            # for sqlite >= 3.6.10
+ 	'-DSQLITE_ENABLE_COLUMN_METADATA',
++	'-DSQLITE_ENABLE_ICU',
+ #	'-DSQLITE_ENABLE_STAT3',            # for sqlite >= 3.7.9
+ #	'-DSQLITE_ENABLE_STAT4',            # for sqlite >= 3.8.3.1
+-	'-DSQLITE_ENABLE_JSON1',            # for sqlite >= 3.9.0
+-	'-DSQLITE_ENABLE_FTS5',             # for sqlite >= 3.9.0
++#	'-DSQLITE_ENABLE_JSON1',            # for sqlite >= 3.9.0
++#	'-DSQLITE_ENABLE_FTS5',             # for sqlite >= 3.9.0
+ 	'-DNDEBUG=1',
+ );
+ 
+@@ -304,6 +308,12 @@
+ 	push @CCFLAGS, "-std=gnu99";
+ }
+ 
++my $MYEXTLIB = join( ' ', (
++       '/usr/share/lms/dev/lib/libicuuc.a',
++       '/usr/share/lms/dev/lib/libicudata.a',
++       '/usr/share/lms/dev/lib/libicui18n.a',
++) );
++
+ my %CC_OPTIONS = (
+ 	INC          => join( ' ', @CC_INC    ),
+ 	DEFINE       => join( ' ', @CC_DEFINE ),
+@@ -313,7 +323,7 @@
+ $CC_OPTIONS{CCFLAGS}   = join ' ', $Config{ccflags}, @CCFLAGS if @CCFLAGS;
+ $CC_OPTIONS{LDFLAGS}   = join ' ', $Config{ldflags}, @LDFLAGS if @LDFLAGS;
+ $CC_OPTIONS{LDDLFLAGS} = join ' ', $Config{lddlflags}, @LDDLFLAGS if @LDDLFLAGS;
+-
++$CC_OPTIONS{MYEXTLIB}  = $MYEXTLIB;
+ 
+ 
+ 

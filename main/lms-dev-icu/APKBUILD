@@ -1,0 +1,58 @@
+# Contributor: xoroxwb <xoroxwb@github.com>
+# Maintainer: xoroxwb <xoroxwb@github.com>
+pkgname=lms-dev-icu
+pkgver=58.2
+pkgrel=0
+pkgdesc="International Components for Unicode library"
+url="http://site.icu-project.org/"
+arch="all"
+license="MIT ICU Unicode-TOU"
+checkdepends="diffutils python3"
+source="https://github.com/Logitech/slimserver-vendor/raw/public/8.0/CPAN/icu4c-${pkgver//./_}-src.tgz
+    	https://github.com/Logitech/slimserver-vendor/raw/public/8.0/CPAN/update-config.sh
+		https://github.com/Logitech/slimserver-vendor/raw/public/8.0/CPAN/icudt${pkgver%.*}l.dat
+    	https://github.com/Logitech/slimserver-vendor/raw/public/8.0/CPAN/icu58_patches/digitlst.cpp.patch"
+builddir="$srcdir/icu/source"
+patch_args="-p0"
+
+# Failing tests on ARMv7
+case "$CARCH" in
+	    armv7) options="!check";;
+esac
+
+build() {
+		sh "$srcdir"/update-config.sh
+    	CFLAGS="-fPIC -DU_USING_ICU_NAMESPACE=0" CXXFLAGS="-fPIC -DU_USING_ICU_NAMESPACE=0" LDFLAGS="-fPIC" \
+        ./runConfigureICU \
+				Linux \
+				--prefix=/usr/share/lms/dev \
+				--enable-static --disable-shared \
+				--with-data-packaging=archive \
+				--disable-samples
+    	make
+}
+
+check() {
+		make check
+}
+
+package() {
+		make DESTDIR="$pkgdir" install
+		rm -vrf "$pkgdir"/usr/share/lms/dev/bin \
+				"$pkgdir"/usr/share/lms/dev/sbin \
+				"$pkgdir"/usr/share/lms/dev/share \
+				"$pkgdir"/usr/share/lms/dev/lib/icu
+		(
+				cd "$pkgdir"/usr/share/lms/dev/lib 
+	  			ln -s libicudata.a libicudata_s.a
+      			ln -s libicui18n.a libicui18n_s.a
+      			ln -s libicuuc.a libicuuc_s.a
+		)
+		install -Dm644 "$srcdir"/icudt${pkgver%.*}l.dat \
+				"$pkgdir"/usr/share/lms/dev/share/icu/${pkgver}/icudt${pkgver%.*}l.dat
+}
+
+sha512sums="5c21af748f48b392e6c0412bd0aee92162ea931820dcbfab4ec6e0299868504b303d88f7586cc95de55c777ac0dca3a29d6c8ca0892c646ebc864c8a5b5a162a  icu4c-58_2-src.tgz
+e9c6bed3fcb1f5b6cb909a1d3c9d63e7866aae53c046635aea7151446e49299e99aed12c8d28f052a5024b09cb9723b4d06127fd2f681eb95c7f05074f805e70  update-config.sh
+926164ce5b8ac94aec55ae41c4c193685a156e274cd315d810af7bdea8a965d78395a10af3a0641214b7d9d16e9b96d7293f1e8def1c65449a235dabf59def01  icudt58l.dat
+d2b8da813b5c8af9939e4af34685b7562ea225ebe9ccdc46e4e9d8bffb3782fb4f8ea34508d672a0bed1a10928fe8c9dc0e458dd2a4f734de435cf587d270df4  digitlst.cpp.patch"
