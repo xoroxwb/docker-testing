@@ -1,0 +1,25 @@
+name: abuildrepo
+
+on:
+  push:
+    branches: docker-compose
+
+env:
+  PRIVKEY: ${{ secrets.PRIVKEY }}
+
+jobs:
+  abuildrepo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: setup buildkit
+        run: |
+          docker pull -q multiarch/qemu-user-static
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
+          docker run --pull --rm \
+            -e PRIVKEY=${PRIVKEY} \
+            -e DRONE_COMMIT_BRANCH=docker-compose \
+            -e DRONE_GIT_HTTP_URL=https://github.com/xoroxwb/docker-testing.git \
+            xoroxwb/abuildrepo:latest
+      - name: clear
+        if: always()
+        run: rm -f ${HOME}/.docker/config.json
