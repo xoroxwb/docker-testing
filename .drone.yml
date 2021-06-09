@@ -7,7 +7,7 @@ steps:
   - name: Build image
     image: alpine
     commands:
-      - apk add --no-cache alpine-conf alpine-sdk aports-build
+      - 'apk add --no-cache alpine-conf alpine-sdk aports-build'
 
 trigger:
   branch:
