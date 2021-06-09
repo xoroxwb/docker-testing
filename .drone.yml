@@ -18,6 +18,10 @@ volumes:
       path: /var/run/docker.sock
 
 trigger:
+  target:
+    include:
+      - staging
+      - production
   branch:
     - docker-compose
   event:
