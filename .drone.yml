@@ -9,10 +9,7 @@ steps:
       - cat /etc/os-release
 
 trigger:
-  target:
-    - production
   branch:
     - docker-compose
   event:
     - push
-    - promote
