@@ -1,21 +1,12 @@
 ---
 kind: pipeline
+type: exec
 name: Build
 
 steps:
   - name: Build image
-    image: docker/compose
     commands:
-      - docker-compose up
-    volumes:
-      - name: docker_sock
-        path: /var/run/docker.sock
-
-
-volumes:
-  - name: docker_sock
-    host:
-      path: /var/run/docker.sock
+      - cat /etc/os-release
 
 trigger:
   target:
