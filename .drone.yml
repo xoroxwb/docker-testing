@@ -1,10 +1,11 @@
 ---
 kind: pipeline
-type: exec
+type: docker
 name: Build
 
 steps:
   - name: Build image
+    image: alpine
     commands:
       - cat /etc/os-release
 
