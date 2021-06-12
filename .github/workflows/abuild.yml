@@ -1,0 +1,61 @@
+name: abuildrepo
+
+on:
+  push:
+    branches: docker-lms
+
+env:
+  DOCKERORG: ${{ secrets.DOCKER_USER }}
+  PLATFORMS: 'linux/amd64,linux/arm64/v8,linux/arm/v7'
+
+jobs:
+  abuild:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platforms: [linux/amd64, linux/arm64/v8, linux/arm/v7]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Setup
+        run: |
+          docker pull -q multiarch/qemu-user-static
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
+          docker buildx create \
+            --name builder-${GITHUB_SHA} \
+            --driver docker-container \
+            --use
+          docker buildx inspect --bootstrap
+
+      - name: pull aportrepo
+        run: |
+          echo "pull"
+
+      - name: build aportrepo
+        run: |
+          docker run --rm \
+            --name abuildrepo \
+            --platform ${{ matrix.platforms }} \
+            -v $PWD/${PRJ_NAME}/aports:/data/aports/main \
+            -v $PWD/${PRJ_NAME}/packages:/data/packages \
+            -e PRIVKEY="${{ secrets.PRIVKEY }}" \
+            -e PACKAGER=${DOCKERORG} \
+            ${DOCKERORG}/abuildrepo:latest
+
+      - name: create aportrepo
+        run: |
+          echo "create aportrepo"
+
+      - name: push aportrepo
+        run: |
+          echo "push aportrepo"
+
+      - name: dispatch
+        run: |
+          echo "dispatch"
+
+
+      
+
+        
