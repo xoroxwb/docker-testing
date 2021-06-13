@@ -4,16 +4,22 @@ on:
   push:
     branches: docker-lms
 
-env:
-  DOCKERORG: ${{ secrets.DOCKER_USER }}
-  PLATFORMS: 'linux/amd64,linux/arm64/v8,linux/arm/v7'
-
 jobs:
   abuild:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platforms: [linux/amd64, linux/arm64/v8, linux/arm/v7]
+        release: [3.13]
+        arch: [x86_64, aarch64, armv7]
+        include:
+          - arch: x86_64
+            platform: linux/amd64
+          - arch: aarch64
+            platform: linux/arm64/v8
+          - arch: armv7
+            platform: linux/arm/v7
+    env:
+      aportrepo: docker.pkg.github.com/${{ github.repository }}/arepo:${{ matrix.arch }}-${{ matrix.release }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -28,13 +34,15 @@ jobs:
             --use
           docker buildx inspect --bootstrap
 
-      - name: pull aportrepo
+      - name: pull $aportrepo
         run: |
-          echo "pull"
+          echo ""  
+        #if docker pull alpine:invalid > /dev/null && echo "success" || echo "failed
 
       - name: build aportrepo
         run: |
           docker run --rm \
+            --pull always \
             --name abuildrepo \
             --platform ${{ matrix.platforms }} \
             -v $PWD/${PRJ_NAME}/aports:/data/aports/main \
@@ -46,10 +54,19 @@ jobs:
       - name: create aportrepo
         run: |
           echo "create aportrepo"
+          #echo -e 'FROM scratch\nCOPY packages/ /data/' | docker build -t $APORTREPO -f- ./$PRJ_NAME
+
+      - name: Log in to GitHub Docker Registry
+        uses: docker/login-action@v1
+        with:
+          registry: docker.pkg.github.com
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: push aportrepo
         run: |
           echo "push aportrepo"
+          #docker.pkg.github.com/${{ github.repository }}/aports:${{ matrix.release }}
 
       - name: dispatch
         run: |
